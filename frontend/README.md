@@ -1,4 +1,4 @@
-# PharmaDigi Project
+# MetricsNumero Project
 
 ## Project info
 
