@@ -28,3 +28,7 @@ services:
 networks:
   default:
     name: metrics-numero-network
+
+volumes:
+  caddy_data:
+  caddy_config:
