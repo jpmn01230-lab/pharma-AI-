@@ -6,29 +6,11 @@ services:
     image: cubeaidocker/pharma-ai-frontend
     container_name: metrics-numero-frontend
     ports:
-      - "8081:80" # Changed from 8080 to avoid conflict with Caddy if needed, but we'll use Caddy on 80/443
+      - "8080:80"
     volumes:
       - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     restart: unless-stopped
 
-  caddy:
-    image: caddy:latest
-    container_name: metrics-numero-caddy
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
-      - caddy_data:/data
-      - caddy_config:/config
-    restart: unless-stopped
-    depends_on:
-      - frontend
-
 networks:
   default:
     name: metrics-numero-network
-
-volumes:
-  caddy_data:
-  caddy_config:

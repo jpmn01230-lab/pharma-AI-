@@ -1,3 +1,0 @@
-216.48.184.69.sslip.io {
-    reverse_proxy metrics-numero-frontend:80
-}

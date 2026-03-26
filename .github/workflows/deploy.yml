@@ -78,7 +78,7 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: root
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: "docker-compose.yml,frontend/nginx.conf,Caddyfile"
+          source: "docker-compose.yml,frontend/nginx.conf"
           target: "~/metrics-numero-app"
 
       - name: Restart Services via SSH
