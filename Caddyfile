@@ -1,14 +1,3 @@
-{
-    email cubeaidocker@gmail.com
-}
-
-# Replace with your actual domain name for automatic SSL!
-# If using raw IP, SSL will be self-signed/restricted.
-:80 {
+216.48.184.69.sslip.io {
     reverse_proxy metrics-numero-frontend:80
 }
-
-# Uncomment and replace with your domain once you have one:
-# your-domain.com {
-#     reverse_proxy metrics-numero-frontend:80
-# }

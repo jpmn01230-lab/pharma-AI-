@@ -91,5 +91,6 @@ jobs:
             mkdir -p ~/metrics-numero-app/frontend
             # Move config files if needed, though scp target pathing usually puts them right
             cd ~/metrics-numero-app
-            docker-compose pull
-            docker-compose up -d
+            docker compose pull
+            # Using --force-recreate to ensure 'ContainerConfig' error is cleared
+            docker compose up -d --force-recreate
