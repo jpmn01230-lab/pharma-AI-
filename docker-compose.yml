@@ -9,8 +9,6 @@ services:
       - "8080:80"
     volumes:
       - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-    env_file:
-      - ./frontend/.env
     restart: unless-stopped
 
 networks:
