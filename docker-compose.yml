@@ -1,0 +1,18 @@
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: cubeaidocker/pharma-ai-frontend
+    container_name: metrics-numero-frontend
+    ports:
+      - "8080:80"
+    volumes:
+      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    env_file:
+      - ./frontend/.env
+    restart: unless-stopped
+
+networks:
+  default:
+    name: metrics-numero-network

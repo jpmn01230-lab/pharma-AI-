@@ -1,0 +1,95 @@
+name: Deploy MetricsNumero
+
+on:
+  push:
+    branches:
+      - deploy
+
+jobs:
+  security-scan:
+    name: Security & Linting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Secret Scan (Gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Dockerfile Lint (Hadolint)
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: frontend/Dockerfile
+          ignore: DL3008,DL3018
+        continue-on-error: true
+
+  build-and-push:
+    name: Build & Push Images
+    needs: security-scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build & Push Frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          push: true
+          build-args: |
+            VITE_GROQ_API_KEY=${{ secrets.VITE_GROQ_API_KEY }}
+            VITE_OLLAMA_API_KEY=${{ secrets.VITE_OLLAMA_API_KEY }}
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/pharma-ai-frontend:latest
+
+  vulnerability-scan:
+    name: Image Vulnerability Scan (Trivy)
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Scan Frontend Image
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: '${{ secrets.DOCKERHUB_USERNAME }}/pharma-ai-frontend:latest'
+          format: 'table'
+          severity: 'HIGH,CRITICAL'
+
+  deploy:
+    name: Deploy to AWS EC2
+    needs: vulnerability-scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Transfer Docker Compose & Nginx Config
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "docker-compose.yml,frontend/nginx.conf"
+          target: "~/metrics-numero-app"
+
+      - name: Restart Services via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            mkdir -p ~/metrics-numero-app/frontend
+            mv ~/metrics-numero-app/frontend/nginx.conf ~/metrics-numero-app/frontend/nginx.conf 2>/dev/null || true
+            cd ~/metrics-numero-app
+            docker compose pull
+            docker compose up -d
