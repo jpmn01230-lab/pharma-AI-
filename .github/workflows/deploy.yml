@@ -91,5 +91,5 @@ jobs:
             mkdir -p ~/metrics-numero-app/frontend
             mv ~/metrics-numero-app/frontend/nginx.conf ~/metrics-numero-app/frontend/nginx.conf 2>/dev/null || true
             cd ~/metrics-numero-app
-            docker compose pull
-            docker compose up -d
+            docker-compose pull
+            docker-compose up -d
