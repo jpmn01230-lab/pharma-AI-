@@ -78,7 +78,7 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: root
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: "docker-compose.yml,frontend/nginx.conf"
+          source: "docker-compose.yml,frontend/nginx.conf,Caddyfile"
           target: "~/metrics-numero-app"
 
       - name: Restart Services via SSH
@@ -89,7 +89,7 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             mkdir -p ~/metrics-numero-app/frontend
-            mv ~/metrics-numero-app/frontend/nginx.conf ~/metrics-numero-app/frontend/nginx.conf 2>/dev/null || true
+            # Move config files if needed, though scp target pathing usually puts them right
             cd ~/metrics-numero-app
             docker-compose pull
             docker-compose up -d
