@@ -10,7 +10,3 @@ services:
     volumes:
       - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     restart: unless-stopped
-
-networks:
-  default:
-    name: metrics-numero-network
