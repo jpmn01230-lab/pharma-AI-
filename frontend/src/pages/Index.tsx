@@ -38,6 +38,17 @@ const formatSize = (bytes: number) => {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 };
 
+const generateUUID = () => {
+  if (typeof crypto !== 'undefined' && (crypto as any).randomUUID) {
+    return (crypto as any).randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+};
+
 const ACCEPTED = ".pdf,.txt,.docx,.csv";
 
 const SYSTEM_PROMPT = `You are a Senior Pharmaceutical Compliance Agent with deep expertise in GMP, FDA 21 CFR Part 211, ICH guidelines, and pharmaceutical manufacturing regulations.
@@ -67,7 +78,7 @@ const Index = () => {
   const addFiles = useCallback((fileList: FileList | null) => {
     if (!fileList) return;
     const newFiles: FileItem[] = Array.from(fileList).map((f) => ({
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       name: f.name,
       size: f.size,
       type: f.type,
@@ -145,7 +156,7 @@ const Index = () => {
 
     setMessages([
       {
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         role: "assistant",
         content: `### 📋 Document Intake & Extraction Complete\n\nI've extracted and indexed **${updated.length}** document${updated.length > 1 ? "s" : ""}:\n\n${docSummary}\n\n---\n\n**Ready for AI-powered compliance analysis.** You can now ask me:\n\n- _"Summarize the critical process parameters from the BMR."_\n- _"Were there any deviations flagged in the batch record?"_\n- _"What was the root cause and corrective action in the CAPA?"_\n- _"Walk me through SOP step 4.2."_`,
       },
@@ -177,7 +188,7 @@ const Index = () => {
     if (!input.trim() || status !== "ready" || isTyping) return;
 
     const userMsg: Message = {
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       role: "user",
       content: input.trim(),
     };
@@ -203,7 +214,7 @@ const Index = () => {
       const isGroq = aiModel === "groq";
       const ollamaModelConfig = aiModel.startsWith("ollama-") ? aiModel.replace("ollama-", "") : undefined;
 
-      const assistantMsgId = crypto.randomUUID();
+      const assistantMsgId = generateUUID();
       setMessages((prev) => [
         ...prev,
         { id: assistantMsgId, role: "assistant", content: isGroq ? "..." : "" },
@@ -225,7 +236,7 @@ const Index = () => {
       setMessages((prev) => [
         ...prev,
         {
-          id: crypto.randomUUID(),
+          id: generateUUID(),
           role: "assistant",
           content: `⚠️ **Error communicating with AI:** ${err instanceof Error ? err.message : "Unknown error occurred."}`,
         },
