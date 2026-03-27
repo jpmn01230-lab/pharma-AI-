@@ -5,7 +5,7 @@ export type TextChunk = {
 };
 
 const HF_TOKEN = import.meta.env.VITE_HF_TOKEN || "";
-const HF_URL = "https://api-inference.huggingface.co/pipeline/feature-extraction/BAAI/bge-large-en-v1.5";
+const HF_URL = "https://api-inference.huggingface.co/models/BAAI/bge-large-en-v1.5";
 
 export async function getEmbedding(text: string): Promise<number[]> {
   try {
