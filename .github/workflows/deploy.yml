@@ -49,7 +49,10 @@ jobs:
           push: true
           build-args: |
             VITE_GROQ_API_KEY=${{ secrets.VITE_GROQ_API_KEY }}
+            VITE_GROQ_API_KEY_NEW=${{ secrets.VITE_GROQ_API_KEY_NEW }}
             VITE_OLLAMA_API_KEY=${{ secrets.VITE_OLLAMA_API_KEY }}
+            VITE_RAILWAY_API_KEY=${{ secrets.VITE_RAILWAY_API_KEY }}
+            VITE_RAILWAY_URL=${{ secrets.VITE_RAILWAY_URL }}
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/pharma-ai-frontend:latest
 
   vulnerability-scan:
