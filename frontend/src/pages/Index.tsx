@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import ReactMarkdown from "react-markdown";
 import { callGroq, type GroqMessage } from "@/lib/groq";
 import { callOllama } from "@/lib/ollama";
+import { callRailway } from "@/lib/railway";
 import { extractText } from "@/lib/extractText";
 import { chunkText, getEmbedding, findRelevantChunks, type TextChunk } from "@/lib/embeddings";
 import {
@@ -67,7 +68,7 @@ const Index = () => {
   const [files, setFiles] = useState<FileItem[]>([]);
   const [allChunks, setAllChunks] = useState<TextChunk[]>([]);
   const [status, setStatus] = useState<AppStatus>("awaiting");
-  const [aiModel, setAiModel] = useState<string>("groq");
+  const [aiModel, setAiModel] = useState<string>("groq-primary");
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isDragging, setIsDragging] = useState(false);
@@ -212,12 +213,13 @@ const Index = () => {
       ];
 
       const isGroq = aiModel === "groq";
+      const isRailway = aiModel === "railway";
       const ollamaModelConfig = aiModel.startsWith("ollama-") ? aiModel.replace("ollama-", "") : undefined;
 
       const assistantMsgId = generateUUID();
       setMessages((prev) => [
         ...prev,
-        { id: assistantMsgId, role: "assistant", content: isGroq ? "..." : "" },
+        { id: assistantMsgId, role: "assistant", content: (isGroq || isRailway) ? "..." : "" },
       ]);
 
       const onChunk = (text: string) => {
@@ -226,8 +228,17 @@ const Index = () => {
         );
       };
 
-      if (isGroq) {
-        const reply = await callGroq(history);
+      if (aiModel.startsWith("groq-")) {
+        const isSecondary = aiModel.includes("-secondary");
+        const modelName = isSecondary ? "llama-3.1-8b-instant" : "llama-3.3-70b-versatile";
+        const apiKey = isSecondary 
+          ? import.meta.env.VITE_GROQ_API_KEY_NEW 
+          : import.meta.env.VITE_GROQ_API_KEY;
+          
+        const reply = await callGroq(history, { apiKey, model: modelName });
+        onChunk(reply);
+      } else if (isRailway) {
+        const reply = await callRailway(history);
         onChunk(reply);
       } else {
         await callOllama(history, ollamaModelConfig, onChunk);
@@ -262,23 +273,41 @@ const Index = () => {
     <div className="flex h-screen bg-secondary/40">
       {/* Sidebar */}
       <aside className="w-72 flex-shrink-0 border-r border-border bg-background flex flex-col">
-        <div className="p-5 border-b border-border flex items-center gap-3">
-          <div className="relative flex items-center justify-center w-8 h-8 text-[#00E5FF]">
-            {/* Outer gear / cog */}
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="absolute inset-0 w-full h-full drop-shadow-md">
-              <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
-              <circle cx="12" cy="12" r="6.5" />
+        <div className="p-5 border-b border-border flex items-center gap-3 bg-white">
+          <div className="relative flex items-center justify-center w-10 h-10 shadow-[0_2px_10px_rgba(0,0,0,0.08)] border border-gray-100 overflow-hidden rounded-md">
+            {/* White background "page" */}
+            <div className="absolute inset-0 bg-white" />
+            {/* Exact Gear SVG Icon */}
+            <svg viewBox="0 0 100 100" className="relative w-8 h-8">
+              {/* Gear Outer Circle */}
+              <circle cx="50" cy="50" r="32" className="fill-[#00E5FF]" />
+              {/* Gear Teeth (12) */}
+              {[...Array(12)].map((_, i) => (
+                <rect
+                  key={i}
+                  x="44" y="10" width="12" height="15" rx="2"
+                  className="fill-[#00E5FF]"
+                  transform={`rotate(${i * 30} 50 50)`}
+                />
+              ))}
+              {/* Inner Circle (Light Cyan) */}
+              <circle cx="50" cy="50" r="22" className="fill-[#E0F7FA]" />
+              {/* 3x3 Grid of Dots */}
+              {[-1, 0, 1].map(row => 
+                [-1, 0, 1].map(col => (
+                  <circle 
+                    key={`${row}-${col}`} 
+                    cx={50 + col * 9} 
+                    cy={50 + row * 9} 
+                    r="2.5" 
+                    className="fill-[#00E5FF]" 
+                  />
+                ))
+              )}
             </svg>
-            {/* Inner net / grid */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="w-[18px] h-[18px] opacity-75">
-                <path d="M6 6h12v12H6z" strokeLinejoin="round" />
-                <path d="M6 12h12M12 6v12M6 6l12 12M18 6L6 18" />
-              </svg>
-            </div>
           </div>
           <h1 className="font-display text-2xl tracking-normal mt-0.5">
-            <span className="text-foreground font-medium">Metrics</span>
+            <span className="text-gray-900 font-medium">Metrics</span>
             <span className="text-[#00E5FF] font-medium">Numero</span>
           </h1>
         </div>
@@ -391,7 +420,9 @@ const Index = () => {
                 <SelectValue placeholder="AI Model" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="groq">Groq - Llama 3.3 (Cloud)</SelectItem>
+                <SelectItem value="groq-primary">Groq - Llama 3.3 (Old)</SelectItem>
+                <SelectItem value="groq-secondary">Groq - Llama 3.3 (New)</SelectItem>
+                <SelectItem value="railway">Railway - Llama 3.1</SelectItem>
                 <SelectItem value="ollama-kimi-k2.5:cloud">kimi-k2.5</SelectItem>
                 <SelectItem value="ollama-deepseek-v3.1:671b-cloud">deepseek-v3.1:671b</SelectItem>
                 <SelectItem value="ollama-kimi-k2:1t-cloud">kimi-k2:1t</SelectItem>
@@ -400,6 +431,7 @@ const Index = () => {
                 <SelectItem value="ollama-nemotron-3-nano:30b-cloud">nemotron-3-nano:30b</SelectItem>
                 <SelectItem value="ollama-gpt-oss:120b-cloud">gpt-oss:120b</SelectItem>
                 <SelectItem value="ollama-gemini-3-flash-preview:cloud">gemini-3-flash-preview</SelectItem>
+                <SelectItem value="ollama-llama3.2">Ollama - Llama 3.2 (Local)</SelectItem>
               </SelectContent>
             </Select>
             <div className="flex items-center gap-2">

@@ -9,15 +9,21 @@ export interface GroqMessage {
   content: string;
 }
 
-export async function callGroq(messages: GroqMessage[]): Promise<string> {
+export async function callGroq(
+  messages: GroqMessage[], 
+  options?: { apiKey?: string; model?: string }
+): Promise<string> {
+  const apiKey = options?.apiKey || GROQ_API_KEY;
+  const model = options?.model || MODEL;
+
   const response = await fetch(GROQ_API_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${GROQ_API_KEY}`,
+      Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: MODEL,
+      model,
       messages,
       temperature: 0.3,
       max_tokens: 1024,
